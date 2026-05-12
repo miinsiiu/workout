@@ -6,26 +6,28 @@
     <title>관리자 페이지</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: Arial, sans-serif; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container { max-width: 1200px; margin: 0 auto; }
+        body { font-family: Arial, sans-serif; background-color: #f5f5f5; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
         
         /* 로그인 화면 */
         .admin-login {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .admin-login-card {
             background: white;
             padding: 50px;
             border-radius: 10px;
-            max-width: 400px;
-            margin: 100px auto;
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            max-width: 400px;
+            width: 100%;
         }
         
-        .admin-login h1 {
+        .admin-login-card h1 {
             text-align: center;
             margin-bottom: 30px;
             color: #333;
@@ -79,6 +81,15 @@
             color: #e74c3c;
             text-align: center;
             margin-top: 10px;
+        }
+        
+        .code-info {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #555;
         }
         
         /* 관리자 페이지 */
@@ -322,20 +333,22 @@
 <body>
     <!-- 관리자 로그인 -->
     <div id="adminLogin" class="admin-login">
-        <h1>🔐 관리자 로그인</h1>
-        
-        <div class="form-group">
-            <label for="adminPassword">마스터 비밀번호:</label>
-            <input type="password" id="adminPassword" placeholder="비밀번호 입력">
-        </div>
-        
-        <button class="btn btn-primary" onclick="adminLogin()">로그인</button>
-        
-        <div id="loginError" class="error-msg"></div>
-        
-        <div style="margin-top: 20px; padding: 15px; background: #ecf0f1; border-radius: 5px; font-size: 12px; color: #555;">
-            <p><strong>기본 비밀번호:</strong> admin123</p>
-            <p style="margin-top: 10px; color: #e74c3c;">⚠️ 실제 서비스에서는 비밀번호를 변경하세요!</p>
+        <div class="admin-login-card">
+            <h1>🔐 관리자 로그인</h1>
+            
+            <div class="form-group">
+                <label for="adminPassword">마스터 비밀번호:</label>
+                <input type="password" id="adminPassword" placeholder="비밀번호 입력">
+            </div>
+            
+            <button class="btn btn-primary" onclick="adminLogin()">로그인</button>
+            
+            <div id="loginError" class="error-msg"></div>
+            
+            <div class="code-info">
+                <p><strong>기본 비밀번호:</strong> admin123</p>
+                <p style="margin-top: 10px; color: #e74c3c;">⚠️ 실제 서비스에서는 비밀번호를 변경하세요!</p>
+            </div>
         </div>
     </div>
 
@@ -361,10 +374,6 @@
                 <div class="stat-card">
                     <h3>비활성 코드</h3>
                     <div class="number" id="inactiveCodesStat">0</div>
-                </div>
-                <div class="stat-card">
-                    <h3>사용자</h3>
-                    <div class="number" id="usersStat">0</div>
                 </div>
             </div>
 
@@ -402,7 +411,27 @@
         </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js"></script>
+
     <script>
+        // Firebase 설정
+        const firebaseConfig = {
+            apiKey: "AIzaSyCaiuN-yXBE5cnKFOcBgqcJrZ0lT0Uhe5M",
+            authDomain: "admin-6b627.firebaseapp.com",
+            databaseURL: "https://admin-6b627-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "admin-6b627",
+            storageBucket: "admin-6b627.firebasestorage.app",
+            messagingSenderId: "941611834803",
+            appId: "1:941611834803:web:0a0a611dbf9e24aef0ffc6",
+            measurementId: "G-E92K0R1B21"
+        };
+
+        // Firebase 초기화
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        
         // 관리자 비밀번호
         const ADMIN_PASSWORD = 'admin123';
         
@@ -416,14 +445,12 @@
         // 페이지 로드 시
         window.addEventListener('load', function() {
             checkAdminLogin();
-            updateStats();
-            renderCodeTable();
         });
 
         // 관리자 로그인
         function adminLogin() {
-            const password = document.getElementById('adminPassword').value;
-            const errorMsg = document.getElementById('loginError');
+            var password = document.getElementById('adminPassword').value;
+            var errorMsg = document.getElementById('loginError');
             
             if (!password) {
                 errorMsg.textContent = '비밀번호를 입력해주세요';
@@ -442,7 +469,7 @@
 
         // 관리자 로그인 상태 확인
         function checkAdminLogin() {
-            const isLogged = localStorage.getItem('adminLogged');
+            var isLogged = localStorage.getItem('adminLogged');
             
             if (isLogged === 'true') {
                 showAdminPage();
@@ -461,7 +488,7 @@
 
         // 로그인 페이지 표시
         function showLoginPage() {
-            document.getElementById('adminLogin').style.display = 'block';
+            document.getElementById('adminLogin').style.display = 'flex';
             document.getElementById('adminPage').style.display = 'none';
         }
 
@@ -476,13 +503,12 @@
 
         // 코드 생성
         function generateCode(type) {
-            // 무작위 코드 생성
-            const randomCode = 'CODE' + Math.random().toString(36).substring(2, 10).toUpperCase();
+            var randomCode = 'CODE' + Math.random().toString(36).substring(2, 10).toUpperCase();
             
-            const now = new Date().getTime();
-            const expiryTime = now + codeDuration[type];
+            var now = new Date().getTime();
+            var expiryTime = now + codeDuration[type];
             
-            const codeData = {
+            var codeData = {
                 code: randomCode,
                 type: type,
                 createdAt: now,
@@ -492,144 +518,122 @@
                 usageCount: 0
             };
             
-            // 코드 목록 가져오기
-            let codes = JSON.parse(localStorage.getItem('adminCodes') || '[]');
-            
-            // 새 코드 추가
-            codes.push(codeData);
-            
-            // 저장
-            localStorage.setItem('adminCodes', JSON.stringify(codes));
-            
-            // 원본 codeDuration도 업데이트 (사용자 페이지에서 사용하기 위해)
-            let userCodes = JSON.parse(localStorage.getItem('userCodes') || '{}');
-            userCodes[randomCode] = {
-                duration: codeDuration[type],
-                active: true
-            };
-            localStorage.setItem('userCodes', JSON.stringify(userCodes));
-            
-            alert(`✅ 코드 생성됨!\n\n코드: ${randomCode}\n종류: ${type === 'day' ? '하루' : type === 'week' ? '일주일' : '한달'}`);
-            
-            updateStats();
-            renderCodeTable();
+            // Firebase에 저장
+            database.ref('codes').child(randomCode).set(codeData, function(error) {
+                if (error) {
+                    alert('❌ 코드 생성 실패');
+                } else {
+                    alert('✅ 코드 생성됨!\n\n코드: ' + randomCode + '\n종류: ' + (type === 'day' ? '하루' : type === 'week' ? '일주일' : '한달'));
+                    updateStats();
+                    renderCodeTable();
+                }
+            });
         }
 
         // 코드 삭제
-        function deleteCode(index) {
+        function deleteCode(codeValue) {
             if (confirm('이 코드를 삭제하시겠습니까?')) {
-                let codes = JSON.parse(localStorage.getItem('adminCodes') || '[]');
-                const deletedCode = codes[index].code;
-                
-                codes.splice(index, 1);
-                localStorage.setItem('adminCodes', JSON.stringify(codes));
-                
-                // userCodes에서도 삭제
-                let userCodes = JSON.parse(localStorage.getItem('userCodes') || '{}');
-                delete userCodes[deletedCode];
-                localStorage.setItem('userCodes', JSON.stringify(userCodes));
-                
-                updateStats();
-                renderCodeTable();
+                database.ref('codes').child(codeValue).remove(function(error) {
+                    if (error) {
+                        alert('❌ 삭제 실패');
+                    } else {
+                        updateStats();
+                        renderCodeTable();
+                    }
+                });
             }
         }
 
         // 코드 활성/비활성 토글
-        function toggleCodeStatus(index) {
-            let codes = JSON.parse(localStorage.getItem('adminCodes') || '[]');
-            codes[index].active = !codes[index].active;
-            
-            localStorage.setItem('adminCodes', JSON.stringify(codes));
-            
-            // userCodes도 업데이트
-            let userCodes = JSON.parse(localStorage.getItem('userCodes') || '{}');
-            const code = codes[index].code;
-            userCodes[code].active = codes[index].active;
-            localStorage.setItem('userCodes', JSON.stringify(userCodes));
-            
-            updateStats();
-            renderCodeTable();
+        function toggleCodeStatus(codeValue, isActive) {
+            database.ref('codes').child(codeValue).update({
+                active: !isActive
+            }, function(error) {
+                if (error) {
+                    alert('❌ 업데이트 실패');
+                } else {
+                    updateStats();
+                    renderCodeTable();
+                }
+            });
         }
 
         // 코드 테이블 렌더링
         function renderCodeTable() {
-            const codes = JSON.parse(localStorage.getItem('adminCodes') || '[]');
-            const container = document.getElementById('codeTableContainer');
-            
-            if (codes.length === 0) {
-                container.innerHTML = '<div class="empty-message">생성된 코드가 없습니다</div>';
-                return;
-            }
-            
-            let html = `
-                <table class="code-table">
-                    <thead>
-                        <tr>
-                            <th>코드</th>
-                            <th>종류</th>
-                            <th>상태</th>
-                            <th>생성일시</th>
-                            <th>만료일시</th>
-                            <th>사용자</th>
-                            <th>작업</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-            
-            codes.forEach((codeData, index) => {
-                const typeText = codeData.type === 'day' ? '하루' : codeData.type === 'week' ? '일주일' : '한달';
-                const typeBadgeClass = `badge-${codeData.type}`;
-                const statusBadgeClass = codeData.active ? 'badge-active' : 'badge-inactive';
-                const statusText = codeData.active ? '활성' : '비활성';
-                const statusButtonClass = codeData.active ? 'btn-toggle-active' : 'btn-toggle-inactive';
-                const statusButtonText = codeData.active ? '비활성' : '활성';
+            database.ref('codes').once('value', function(snapshot) {
+                var codes = [];
                 
-                const createdDate = new Date(codeData.createdAt).toLocaleString('ko-KR');
-                const expiryDate = new Date(codeData.expiryTime).toLocaleString('ko-KR');
+                if (snapshot.exists()) {
+                    snapshot.forEach(function(childSnapshot) {
+                        codes.push(childSnapshot.val());
+                    });
+                }
                 
-                const usageText = codeData.usageCount > 0 ? `${codeData.usageCount}명` : '미사용';
+                var container = document.getElementById('codeTableContainer');
                 
-                html += `
-                    <tr>
-                        <td><strong>${codeData.code}</strong></td>
-                        <td><span class="code-badge ${typeBadgeClass}">${typeText}</span></td>
-                        <td><span class="code-badge ${statusBadgeClass}">${statusText}</span></td>
-                        <td>${createdDate}</td>
-                        <td>${expiryDate}</td>
-                        <td>${usageText}</td>
-                        <td>
-                            <button class="btn-toggle ${statusButtonClass}" onclick="toggleCodeStatus(${index})">${statusButtonText}</button>
-                            <button class="btn-delete" onclick="deleteCode(${index})">삭제</button>
-                        </td>
-                    </tr>
-                `;
+                if (codes.length === 0) {
+                    container.innerHTML = '<div class="empty-message">생성된 코드가 없습니다</div>';
+                    return;
+                }
+                
+                var html = '<table class="code-table"><thead><tr>';
+                html += '<th>코드</th><th>종류</th><th>상태</th><th>생성일시</th><th>만료일시</th><th>사용자</th><th>작업</th>';
+                html += '</tr></thead><tbody>';
+                
+                codes.forEach(function(codeData) {
+                    var typeText = codeData.type === 'day' ? '하루' : codeData.type === 'week' ? '일주일' : '한달';
+                    var typeBadgeClass = 'badge-' + codeData.type;
+                    var statusBadgeClass = codeData.active ? 'badge-active' : 'badge-inactive';
+                    var statusText = codeData.active ? '활성' : '비활성';
+                    var statusButtonClass = codeData.active ? 'btn-toggle-active' : 'btn-toggle-inactive';
+                    var statusButtonText = codeData.active ? '비활성' : '활성';
+                    
+                    var createdDate = new Date(codeData.createdAt).toLocaleString('ko-KR');
+                    var expiryDate = new Date(codeData.expiryTime).toLocaleString('ko-KR');
+                    
+                    var usageText = codeData.usageCount > 0 ? codeData.usageCount + '명' : '미사용';
+                    
+                    html += '<tr>';
+                    html += '<td><strong>' + codeData.code + '</strong></td>';
+                    html += '<td><span class="code-badge ' + typeBadgeClass + '">' + typeText + '</span></td>';
+                    html += '<td><span class="code-badge ' + statusBadgeClass + '">' + statusText + '</span></td>';
+                    html += '<td>' + createdDate + '</td>';
+                    html += '<td>' + expiryDate + '</td>';
+                    html += '<td>' + usageText + '</td>';
+                    html += '<td>';
+                    html += '<button class="btn-toggle ' + statusButtonClass + '" onclick="toggleCodeStatus(\'' + codeData.code + '\', ' + codeData.active + ')">' + statusButtonText + '</button>';
+                    html += '<button class="btn-delete" onclick="deleteCode(\'' + codeData.code + '\')">삭제</button>';
+                    html += '</td>';
+                    html += '</tr>';
+                });
+                
+                html += '</tbody></table>';
+                
+                container.innerHTML = html;
             });
-            
-            html += `
-                    </tbody>
-                </table>
-            `;
-            
-            container.innerHTML = html;
         }
 
         // 통계 업데이트
         function updateStats() {
-            const codes = JSON.parse(localStorage.getItem('adminCodes') || '[]');
-            const totalCodes = codes.length;
-            const activeCodes = codes.filter(c => c.active).length;
-            const inactiveCodes = totalCodes - activeCodes;
-            
-            let totalUsers = 0;
-            codes.forEach(c => {
-                totalUsers += c.usageCount;
+            database.ref('codes').once('value', function(snapshot) {
+                var totalCodes = 0;
+                var activeCodes = 0;
+                
+                if (snapshot.exists()) {
+                    snapshot.forEach(function(childSnapshot) {
+                        totalCodes++;
+                        if (childSnapshot.val().active) {
+                            activeCodes++;
+                        }
+                    });
+                }
+                
+                var inactiveCodes = totalCodes - activeCodes;
+                
+                document.getElementById('totalCodesStat').textContent = totalCodes;
+                document.getElementById('activeCodesStat').textContent = activeCodes;
+                document.getElementById('inactiveCodesStat').textContent = inactiveCodes;
             });
-            
-            document.getElementById('totalCodesStat').textContent = totalCodes;
-            document.getElementById('activeCodesStat').textContent = activeCodes;
-            document.getElementById('inactiveCodesStat').textContent = inactiveCodes;
-            document.getElementById('usersStat').textContent = totalUsers;
         }
     </script>
 </body>
