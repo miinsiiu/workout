@@ -161,6 +161,12 @@
             margin-bottom: 20px;
             font-weight: bold;
         }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -269,7 +275,27 @@
         </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js"></script>
+
     <script>
+        // Firebase 설정
+        const firebaseConfig = {
+            apiKey: "AIzaSyCaiuN-yXBE5cnKFOcBgqcJrZ0lT0Uhe5M",
+            authDomain: "admin-6b627.firebaseapp.com",
+            databaseURL: "https://admin-6b627-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "admin-6b627",
+            storageBucket: "admin-6b627.firebasestorage.app",
+            messagingSenderId: "941611834803",
+            appId: "1:941611834803:web:0a0a611dbf9e24aef0ffc6",
+            measurementId: "G-E92K0R1B21"
+        };
+
+        // Firebase 초기화
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
         var splitPrograms = {
             2: [
                 { name: '상체', muscles: ['가슴','등','어깨','팔'] },
@@ -365,44 +391,35 @@
                 return;
             }
             
-            // 관리자 페이지에서 생성한 코드 확인
-            var adminCodes = JSON.parse(localStorage.getItem('adminCodes') || '[]');
-            var codeFound = false;
-            var codeData = null;
-
-            for (var i = 0; i < adminCodes.length; i++) {
-                if (adminCodes[i].code === code) {
-                    codeFound = true;
-                    codeData = adminCodes[i];
-                    break;
+            // Firebase에서 코드 확인
+            database.ref('codes').child(code).once('value', function(snapshot) {
+                if (snapshot.exists()) {
+                    var codeData = snapshot.val();
+                    
+                    if (!codeData.active) {
+                        errorMsg.textContent = '❌ 비활성화된 코드입니다';
+                        return;
+                    }
+                    
+                    var now = new Date().getTime();
+                    if (now > codeData.expiryTime) {
+                        errorMsg.textContent = '❌ 만료된 코드입니다';
+                        return;
+                    }
+                    
+                    var loginData = {
+                        code: code,
+                        loginTime: now,
+                        expiryTime: codeData.expiryTime
+                    };
+                    
+                    localStorage.setItem('loginData', JSON.stringify(loginData));
+                    errorMsg.textContent = '';
+                    showApp();
+                } else {
+                    errorMsg.textContent = '❌ 유효하지 않은 코드입니다';
                 }
-            }
-
-            if (!codeFound) {
-                errorMsg.textContent = '❌ 유효하지 않은 코드입니다';
-                return;
-            }
-
-            if (!codeData.active) {
-                errorMsg.textContent = '❌ 비활성화된 코드입니다';
-                return;
-            }
-            
-            var now = new Date().getTime();
-            var duration = codeData.type === 'day' ? 24 * 60 * 60 * 1000 : 
-                          codeData.type === 'week' ? 7 * 24 * 60 * 60 * 1000 : 
-                          30 * 24 * 60 * 60 * 1000;
-            var expiryTime = now + duration;
-            
-            var loginData = {
-                code: code,
-                loginTime: now,
-                expiryTime: expiryTime
-            };
-            
-            localStorage.setItem('loginData', JSON.stringify(loginData));
-            errorMsg.textContent = '';
-            showApp();
+            });
         }
 
         function logoutApp() {
@@ -429,7 +446,9 @@
                 appState.name = saved.name;
                 appState.split = saved.split;
                 appState.selectedDays = saved.selectedDays;
-                appState.records = localStorage.getItem('workoutRecords') ? JSON.parse(localStorage.getItem('workoutRecords')) : [];
+                
+                // Firebase에서 기록 불러오기
+                loadRecordsFromFirebase();
                 currentProgram = makeProgram(appState.split, appState.selectedDays);
                 showMainPage();
             } else {
@@ -490,6 +509,32 @@
             }
         }
 
+        // ===== Firebase 함수 =====
+        function loadRecordsFromFirebase() {
+            var userId = localStorage.getItem('loginData') ? JSON.parse(localStorage.getItem('loginData')).code : 'guest';
+            
+            database.ref('users').child(userId).child('records').once('value', function(snapshot) {
+                if (snapshot.exists()) {
+                    var records = snapshot.val();
+                    appState.records = Object.values(records);
+                } else {
+                    appState.records = [];
+                }
+                renderCalendar();
+            });
+        }
+
+        function saveRecordsToFirebase() {
+            var userId = localStorage.getItem('loginData') ? JSON.parse(localStorage.getItem('loginData')).code : 'guest';
+            var recordsObj = {};
+            
+            appState.records.forEach(function(record, idx) {
+                recordsObj[idx] = record;
+            });
+            
+            database.ref('users').child(userId).child('records').set(recordsObj);
+        }
+
         // ===== 운동 앱 함수 =====
         function startSetup() {
             var name = document.getElementById('userName').value.trim();
@@ -508,7 +553,7 @@
             appState.name = name;
             appState.split = split;
             appState.selectedDays = selectedDays;
-            appState.records = localStorage.getItem('workoutRecords') ? JSON.parse(localStorage.getItem('workoutRecords')) : [];
+            appState.records = [];
 
             currentProgram = makeProgram(split, selectedDays);
             
@@ -859,7 +904,7 @@
                 appState.records.push(record);
             }
 
-            localStorage.setItem('workoutRecords', JSON.stringify(appState.records));
+            saveRecordsToFirebase();
             alert('저장되었습니다!');
             closeModal();
             renderCalendar();
