@@ -361,24 +361,37 @@
             }
 
             if (code === 'admin') {
-                window.location.href = 'admin.html';
+                window.location.href = 'admin/';
                 return;
             }
             
-            var userCodes = JSON.parse(localStorage.getItem('userCodes') || '{}');
-            
-            if (!userCodes[code]) {
+            // 관리자 페이지에서 생성한 코드 확인
+            var adminCodes = JSON.parse(localStorage.getItem('adminCodes') || '[]');
+            var codeFound = false;
+            var codeData = null;
+
+            for (var i = 0; i < adminCodes.length; i++) {
+                if (adminCodes[i].code === code) {
+                    codeFound = true;
+                    codeData = adminCodes[i];
+                    break;
+                }
+            }
+
+            if (!codeFound) {
                 errorMsg.textContent = '❌ 유효하지 않은 코드입니다';
                 return;
             }
 
-            if (!userCodes[code].active) {
+            if (!codeData.active) {
                 errorMsg.textContent = '❌ 비활성화된 코드입니다';
                 return;
             }
             
             var now = new Date().getTime();
-            var duration = userCodes[code].duration;
+            var duration = codeData.type === 'day' ? 24 * 60 * 60 * 1000 : 
+                          codeData.type === 'week' ? 7 * 24 * 60 * 60 * 1000 : 
+                          30 * 24 * 60 * 60 * 1000;
             var expiryTime = now + duration;
             
             var loginData = {
