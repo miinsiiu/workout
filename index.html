@@ -446,12 +446,29 @@
             var remainingTime = data.expiryTime - now;
             
             if (remainingTime > 0) {
-                var hours = Math.floor(remainingTime / (1000 * 60 * 60));
-                var minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
+                var totalDays = Math.floor(remainingTime / (1000 * 60 * 60 * 24));
+                var totalHours = Math.floor(remainingTime / (1000 * 60 * 60));
+                var totalMinutes = Math.floor(remainingTime / (1000 * 60));
+                
+                var weeks = Math.floor(totalDays / 7);
+                var days = totalDays % 7;
+                var hours = Math.floor((remainingTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                
+                var timeText = '';
+                
+                if (weeks > 0) {
+                    timeText = weeks + '주 ' + days + '일';
+                } else if (totalDays > 0) {
+                    timeText = days + '일 ' + hours + '시간';
+                } else if (totalHours > 0) {
+                    timeText = totalHours + '시간';
+                } else {
+                    timeText = totalMinutes + '분';
+                }
                 
                 var infoDiv = document.getElementById('expiryInfo');
                 if (infoDiv) {
-                    infoDiv.textContent = '⏰ 남은 시간: ' + hours + '시간 ' + minutes + '분';
+                    infoDiv.textContent = '⏰ 남은 시간: ' + timeText;
                 }
             }
         }
